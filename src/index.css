@@ -630,6 +630,10 @@ body, html, #root {
   border-color: var(--accent-cyan);
 }
 
+.auto-rotate-btn {
+  width: 100%;
+}
+
 /* Floating Hotspot Overlay UI */
 .hotspot-card {
   background: rgba(10, 11, 16, 0.9);

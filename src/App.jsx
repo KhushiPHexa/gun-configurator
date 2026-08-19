@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import GunCanvas from './components/3d/GunCanvas';
 import ConfiguratorPanel from './components/ui/ConfiguratorPanel';
 import LoadingScreen from './components/ui/LoadingScreen';
-import { playShotSound, playReloadSound, playToggleSound } from './utils/AudioEngine';
+import { playShotSound, playToggleSound } from './utils/AudioEngine';
 import { useAssetPreload } from './hooks/useAssetPreload';
 import { Volume2, VolumeX } from 'lucide-react';
 import WeaponKPIs from './components/ui/WeaponKPIs';
@@ -10,7 +10,7 @@ import { DEFAULT_GUN_ID } from './constants/guns';
 
 const INITIAL_CONFIG = {
   gunId: DEFAULT_GUN_ID,
-  inspectMode: false
+  autoRotate: true
 };
 
 export default function App() {
@@ -28,15 +28,6 @@ export default function App() {
     if (!audioMuted) playShotSound();
     setIsFiring(true);
     setTimeout(() => setIsFiring(false), 80);
-  };
-
-  const handleReload = () => {
-    if (!audioMuted) playReloadSound();
-  };
-
-  const handleReset = () => {
-    if (!audioMuted) playToggleSound();
-    setConfig(INITIAL_CONFIG);
   };
 
   const toggleMute = () => {
@@ -71,8 +62,6 @@ export default function App() {
         config={config}
         setConfig={setConfig}
         onFire={handleFire}
-        onReload={handleReload}
-        onReset={handleReset}
       />
     </div>
   );

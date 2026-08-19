@@ -5,7 +5,7 @@ import * as THREE from 'three';
 import GunModel from './GunModel';
 import { getGunById } from '../../constants/guns';
 
-function SceneControls({ gunId, inspectMode }) {
+function SceneControls({ gunId, autoRotate }) {
   const controlsRef = useRef();
 
   useEffect(() => {
@@ -17,7 +17,7 @@ function SceneControls({ gunId, inspectMode }) {
       ref={controlsRef}
       enableDamping
       dampingFactor={0.05}
-      autoRotate={inspectMode}
+      autoRotate={autoRotate}
       autoRotateSpeed={0.8}
       minDistance={1.4}
       maxDistance={5.5}
@@ -202,7 +202,7 @@ export default function GunCanvas({ config, isFiring }) {
         <FireParticles gunId={config.gunId} isFiring={isFiring} muzzleFlashRef={muzzleFlashRef} />
       </group>
 
-      <SceneControls gunId={config.gunId} inspectMode={config.inspectMode} />
+      <SceneControls gunId={config.gunId} autoRotate={config.autoRotate} />
     </Canvas>
   );
 }

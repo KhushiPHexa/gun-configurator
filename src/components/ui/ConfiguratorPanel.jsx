@@ -1,9 +1,6 @@
-import React from 'react';
 import { 
   Flame, 
   RotateCcw, 
-  Volume2, 
-  Eye, 
   Crosshair
 } from 'lucide-react';
 import { playToggleSound } from '../../utils/AudioEngine';
@@ -13,9 +10,7 @@ import { useGLTF } from '@react-three/drei';
 export default function ConfiguratorPanel({ 
   config, 
   setConfig, 
-  onFire, 
-  onReload, 
-  onReset 
+  onFire
 }) {
   const handleGunChange = (gunId) => {
     if (config.gunId === gunId) return;
@@ -56,27 +51,16 @@ export default function ConfiguratorPanel({
           <span>ENGAGE FIRE</span>
         </button>
 
-        <div className="utility-buttons">
-          <button className="util-btn" onClick={onReload}>
-            <Volume2 size={15} />
-            <span>RELOAD</span>
-          </button>
-
-          <button 
-            className={`util-btn ${config.inspectMode ? 'active' : ''}`}
-            onClick={() => {
-              playToggleSound();
-              setConfig(prev => ({ ...prev, inspectMode: !prev.inspectMode }));
-            }}
-          >
-            <RotateCcw size={15} />
-            <span>{config.inspectMode ? 'ROTATING' : 'INSPECT'}</span>
-          </button>
-        </div>
-
-        <button className="util-btn" style={{ width: '100%' }} title="Reset Weapon" onClick={onReset}>
-          <Eye size={15} />
-          <span>RESET</span>
+        <button
+          type="button"
+          className={`util-btn auto-rotate-btn ${config.autoRotate ? 'active' : ''}`}
+          onClick={() => {
+            playToggleSound();
+            setConfig((prev) => ({ ...prev, autoRotate: !prev.autoRotate }));
+          }}
+        >
+          <RotateCcw size={15} />
+          <span>{config.autoRotate ? 'AUTO ROTATE: ON' : 'AUTO ROTATE: OFF'}</span>
         </button>
       </footer>
     </aside>
