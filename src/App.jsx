@@ -5,15 +5,6 @@ import { playShotSound, playReloadSound, playToggleSound } from './utils/AudioEn
 import { Volume2, VolumeX, ShieldCheck } from 'lucide-react';
 
 const INITIAL_CONFIG = {
-  skin: 'matte',
-  color: '#ffffff', // factory original textures
-  roughness: 0.6,
-  metalness: 0.5,
-  silencer: false,
-  laserActive: false,
-  optic: false,
-  magazine: false,
-  environment: 'studio',
   inspectMode: false,
   showHotspots: true
 };
@@ -30,7 +21,7 @@ export default function App() {
     
     // Play sound (silenced or normal)
     if (!audioMuted) {
-      playShotSound(config.silencer);
+      playShotSound();
     }
     
     // Trigger animations in Canvas/Model
@@ -159,7 +150,6 @@ export default function App() {
         setConfig={setConfig}
         onFire={handleFire}
         onReload={handleReload}
-        activeHotspot={activeHotspot}
         onReset={handleReset}
       />
     </div>

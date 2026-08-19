@@ -180,69 +180,28 @@ export default function GunCanvas({ config, isFiring, activeHotspot, setActiveHo
     }
   ];
 
-  const renderEnvironment = () => {
-    switch (config.environment) {
-      case 'neon':
-        return (
-          <>
-            <color attach="background" args={['#030408']} />
-            <ambientLight intensity={0.15} />
-            <directionalLight position={[5, 10, 5]} intensity={0.5} castShadow />
-            <pointLight position={[-4, 2, -2]} color="#00f2fe" intensity={3} distance={10} />
-            <pointLight position={[4, 2, 2]} color="#ff007f" intensity={3} distance={10} />
-            <pointLight position={[0, 4, -4]} color="#9b51e0" intensity={2} distance={8} />
-            
-            <gridHelper args={[30, 30, '#00f2fe', '#ff007f']} position={[0, -0.85, 0]} opacity={0.2} transparent />
-            <mesh position={[0, -0.86, 0]} rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
-              <planeGeometry args={[50, 50]} />
-              <meshStandardMaterial color="#030408" roughness={0.9} metalness={0.1} />
-            </mesh>
-          </>
-        );
-      case 'warehouse':
-        return (
-          <>
-            <color attach="background" args={['#0d0d12']} />
-            <ambientLight intensity={0.3} />
-            <directionalLight position={[0, 15, 2]} intensity={2.0} castShadow shadow-mapSize-width={1024} shadow-mapSize-height={1024} />
-            <pointLight position={[6, 3, -4]} color="#ffad5a" intensity={1.5} distance={12} />
-            <pointLight position={[-6, 3, 4]} color="#ffddaa" intensity={1.0} distance={12} />
-            
-            <gridHelper args={[20, 20, '#555555', '#222222']} position={[0, -0.85, 0]} opacity={0.15} transparent />
-            <ContactShadows position={[0, -0.84, 0]} opacity={0.7} scale={10} blur={2.5} far={2} />
-            <mesh position={[0, -0.86, 0]} rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
-              <planeGeometry args={[50, 50]} />
-              <meshStandardMaterial color="#0d0d12" roughness={0.5} metalness={0.4} />
-            </mesh>
-          </>
-        );
-      case 'studio':
-      default:
-        return (
-          <>
-            <color attach="background" args={['#0e0f15']} />
-            <ambientLight intensity={0.45} />
-            <directionalLight position={[5, 10, 3]} intensity={2.5} castShadow shadow-mapSize-width={2048} shadow-mapSize-height={2048} />
-            <directionalLight position={[-5, 5, -8]} intensity={1.5} color="#fff" />
-            <pointLight position={[0, 4, 6]} color="#ffffff" intensity={0.5} />
-            
-            <ContactShadows position={[0, -0.85, 0]} opacity={0.65} scale={8} blur={2.2} far={2} />
-          </>
-        );
-    }
-  };
+  const renderEnvironment = () => (
+    <>
+      <color attach="background" args={['#cecece']} />
+      <ambientLight intensity={0.45} />
+      <directionalLight position={[5, 10, 3]} intensity={2.5} castShadow shadow-mapSize-width={2048} shadow-mapSize-height={2048} />
+      <directionalLight position={[-5, 5, -8]} intensity={1.5} color="#fff" />
+      <pointLight position={[0, 4, 6]} color="#ffffff" intensity={0.5} />
+      
+      <ContactShadows position={[0, -0.85, 0]} opacity={0.65} scale={8} blur={2.2} far={2} />
+    </>
+  );
 
   return (
     <Canvas
       shadows
       camera={{ position: [0, 0.1, 3.2], fov: 60 }}
-      gl={{ antialias: true, preserveDrawingBuffer: true }}
+      gl={{ antialias: true, preserveDrawingBuffer: true, toneMappingExposure :3  }}
     >
       {renderEnvironment()}
 
       <group position={[0, 0.05, 0]}>
         <GunModel
-          config={config}
           isFiring={isFiring}
           muzzleFlashRef={muzzleFlashRef}
         />
