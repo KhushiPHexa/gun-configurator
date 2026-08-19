@@ -1,6 +1,6 @@
 import React, { useRef, useEffect, useMemo, Suspense } from 'react';
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
-import { OrbitControls, useGLTF } from '@react-three/drei';
+import { Environment, OrbitControls, useGLTF } from '@react-three/drei';
 import * as THREE from 'three';
 import GunModel from './GunModel';
 import { DEFAULT_GUN_ID, getGunById } from '../../constants/guns';
@@ -210,7 +210,7 @@ export default function GunCanvas({ config, isFiring }) {
       <ambientLight intensity={0.55} />
       <directionalLight position={[5, 10, 3]} intensity={2.2} />
       <directionalLight position={[-4, 4, -6]} intensity={1.2} />
-
+      <Environment preset="city" intensity={0.3} />
       <group position={[0, 0.05, 0]}>
         <GunModel
           gunId={config.gunId}

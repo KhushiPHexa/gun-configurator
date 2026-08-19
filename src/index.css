@@ -489,75 +489,6 @@ body, html, #root {
   color: var(--text-primary);
 }
 
-/* Weapon KPI Panel */
-.weapon-kpi-wrapper {
-  position: absolute;
-  top: 24px;
-  left: 24px;
-  z-index: 10;
-}
-
-.kpi-toggle-btn {
-  display: none;
-}
-
-.weapon-kpi-panel {
-  pointer-events: none;
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-  min-width: 168px;
-  background: rgba(10, 11, 16, 0.5);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 6px;
-  padding: 12px 14px;
-  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.45);
-}
-
-.kpi-row {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-
-.kpi-row-header {
-  display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: 16px;
-}
-
-.kpi-value {
-  font-family: var(--font-mono);
-  font-size: 15px;
-  font-weight: 700;
-  line-height: 1;
-  color: #ffffff;
-  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
-}
-
-.kpi-label {
-  font-size: 10px;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.6px;
-  color: #c8cce0;
-}
-
-.kpi-track {
-  width: 100%;
-  height: 3px;
-  background: rgba(255, 255, 255, 0.12);
-  border-radius: 2px;
-  overflow: hidden;
-}
-
-.kpi-bar {
-  height: 100%;
-  border-radius: 2px;
-}
 
 /* Action Controls Panel */
 .actions-footer {
@@ -769,36 +700,4 @@ body, html, #root {
     flex-shrink: 0;
   }
 
-  .kpi-toggle-btn {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 36px;
-    height: 36px;
-    border-radius: 50%;
-    background: rgba(10, 11, 16, 0.65);
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    color: var(--text-secondary);
-    cursor: pointer;
-    transition: var(--transition-smooth);
-    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.35);
-  }
-
-  .kpi-toggle-btn:hover,
-  .kpi-toggle-btn.is-active {
-    border-color: var(--accent-cyan);
-    color: var(--accent-cyan);
-  }
-
-  .weapon-kpi-panel {
-    display: none;
-    margin-top: 10px;
-    pointer-events: auto;
-  }
-
-  .weapon-kpi-panel.is-open {
-    display: flex;
-  }
 }

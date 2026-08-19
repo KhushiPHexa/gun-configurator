@@ -5,7 +5,6 @@ import LoadingScreen from './components/ui/LoadingScreen';
 import { playShotSound, playToggleSound } from './utils/AudioEngine';
 import { useAssetPreload } from './hooks/useAssetPreload';
 import { Volume2, VolumeX } from 'lucide-react';
-import WeaponKPIs from './components/ui/WeaponKPIs';
 import { DEFAULT_GUN_ID } from './constants/guns';
 
 const INITIAL_CONFIG = {
@@ -38,8 +37,6 @@ export default function App() {
   return (
     <div className="app-container">
       <main className="canvas-container">
-        <WeaponKPIs />
-
         {/* Canvas must stay mounted — never wrap it in Suspense */}
         <GunCanvas config={config} isFiring={isFiring} />
 
