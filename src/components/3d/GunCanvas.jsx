@@ -1,5 +1,5 @@
-import React, { useRef, useState, useEffect } from 'react';
-import { Canvas, useFrame, useThree } from '@react-three/fiber';
+import React, { useRef, useEffect } from 'react';
+import { Canvas, useFrame } from '@react-three/fiber';
 import { OrbitControls, Html } from '@react-three/drei';
 import * as THREE from 'three';
 import GunModel from './GunModel';
@@ -7,7 +7,6 @@ import GunModel from './GunModel';
 // Performance-optimized Particle Component for Firing Effects
 // Defined OUTSIDE to prevent unmounting and recreating WebGL context
 function FireParticles({ isFiring, muzzleFlashRef }) {
-  const sparksRef = useRef([]);
   const casingsRef = useRef([]);
   const flashRef = useRef(null);
   const flashLightRef = useRef(null);
@@ -17,39 +16,17 @@ function FireParticles({ isFiring, muzzleFlashRef }) {
   // Trigger burst when firing is active
   useEffect(() => {
     if (isFiring && muzzleFlashRef && muzzleFlashRef.current) {
-      const pos = muzzleFlashRef.current; // [x, y, z]
-
-      // 1. Trigger Muzzle Flash (turn on visual sphere and point light)
+      // Trigger Muzzle Flash (turn on visual sphere and point light)
       if (flashRef.current) flashRef.current.scale.setScalar(1.2 + Math.random() * 0.5);
       if (flashLightRef.current) flashLightRef.current.intensity = 8.0;
       flashTimeRef.current = 0.06; // show for 60ms
 
-      // 2. Generate Sparks (18 bright yellow/red sparks shooting out of muzzle tip)
-      const sparkCount = 18;
-      for (let i = 0; i < sparkCount; i++) {
-        const spark = {
-          pos: new THREE.Vector3(...pos),
-          // Gun barrel points to left (-X), so shoot sparks along -X axis
-          vel: new THREE.Vector3(
-            -4.5 - Math.random() * 4,
-            (Math.random() - 0.5) * 2.5,
-            (Math.random() - 0.5) * 2.5
-          ),
-          color: Math.random() > 0.4 ? '#ffaa44' : '#ff3300',
-          size: 0.015 + Math.random() * 0.02,
-          life: 1.0,
-          decay: 2.5 + Math.random() * 2.0
-        };
-        sparksRef.current.push(spark);
-      }
-
-      // 3. Generate Ejecting Bullet Casing (brass shell flying right and up)
-      // Casing eject position is roughly in the center receiver area (0.1, 0.2, 0.08)
+      // Generate Ejecting Bullet Casing (brass shell flying right and up)
       const shellPos = new THREE.Vector3(0.15, 0.2, 0.08);
       const casing = {
         pos: shellPos,
         vel: new THREE.Vector3(
-          1.5 + Math.random() * 1.5, // fly up/right
+          1.5 + Math.random() * 1.5,
           2.0 + Math.random() * 1.5,
           1.0 + Math.random() * 1.5
         ),
@@ -80,17 +57,6 @@ function FireParticles({ isFiring, muzzleFlashRef }) {
         if (flashLightRef.current) flashLightRef.current.intensity *= 0.65;
       }
     }
-
-    // Update Sparks
-    sparksRef.current = sparksRef.current.filter((s) => {
-      s.life -= delta * s.decay;
-      if (s.life <= 0) return false;
-      
-      s.pos.addScaledVector(s.vel, delta);
-      s.vel.y -= delta * 1.5; // gravity
-      s.vel.multiplyScalar(0.95); // drag
-      return true;
-    });
 
     // Update Casings
     casingsRef.current = casingsRef.current.filter((c) => {
@@ -123,14 +89,6 @@ function FireParticles({ isFiring, muzzleFlashRef }) {
         </mesh>
         <pointLight ref={flashLightRef} color="#ff7700" intensity={0} distance={4} />
       </group>
-
-      {/* Sparks */}
-      {sparksRef.current.map((s, idx) => (
-        <mesh key={`s-${idx}`} position={s.pos.toArray()}>
-          <sphereGeometry args={[s.size, 6, 6]} />
-          <meshBasicMaterial color={s.color} transparent opacity={s.life} />
-        </mesh>
-      ))}
 
       {/* Casings */}
       {casingsRef.current.map((c, idx) => (
