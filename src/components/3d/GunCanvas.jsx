@@ -1,15 +1,9 @@
-import React, { useRef, useEffect } from 'react';
+import React, { useRef, useEffect, useMemo, Suspense } from 'react';
 import { Canvas, useFrame } from '@react-three/fiber';
-import { OrbitControls } from '@react-three/drei';
+import { OrbitControls, useGLTF } from '@react-three/drei';
 import * as THREE from 'three';
 import GunModel from './GunModel';
-
-const CASING_GEOMETRY = new THREE.CylinderGeometry(0.015, 0.015, 0.06, 6);
-const CASING_MATERIAL = new THREE.MeshStandardMaterial({
-  color: '#c29b38',
-  metalness: 0.9,
-  roughness: 0.2
-});
+import { getGunById } from '../../constants/guns';
 
 function SceneControls({ gunId, inspectMode }) {
   const controlsRef = useRef();
@@ -34,39 +28,87 @@ function SceneControls({ gunId, inspectMode }) {
   );
 }
 
-function FireParticles({ isFiring, muzzleFlashRef }) {
-  const casingsRef = useRef([]);
+function useBulletMesh() {
+  const { scene } = useGLTF('/Bullet.glb');
+
+  return useMemo(() => {
+    scene.position.set(0, 0, 0);
+    scene.rotation.set(0, 0, 0);
+    scene.scale.set(1, 1, 1);
+    scene.updateMatrixWorld(true);
+
+    let geometry = null;
+    let material = null;
+
+    scene.traverse((child) => {
+      if (child.isMesh && !geometry) {
+        geometry = child.geometry;
+        material = child.material;
+      }
+    });
+
+    const box = new THREE.Box3().setFromObject(scene);
+    const center = new THREE.Vector3();
+    box.getCenter(center);
+
+    return { geometry, material, scale: 1, center };
+  }, [scene]);
+}
+
+const BULLET_SCALE = 3;
+const BULLET_SPEED = 2;
+
+function getSplashPosition(muzzle, yOffset, target = new THREE.Vector3()) {
+  return target.set(muzzle[0], muzzle[1] + yOffset, muzzle[2]);
+}
+
+function FireParticlesInner({ gunId, isFiring, muzzleFlashRef }) {
+  const gun = getGunById(gunId);
+  const spawnYOffset = gun.bulletSpawnYOffset;
+  const bulletsRef = useRef([]);
+  const bulletPoolRef = useRef();
   const flashRef = useRef(null);
   const flashGroupRef = useRef(null);
   const flashTimeRef = useRef(0);
+  const bulletMesh = useBulletMesh();
+  const offset = useMemo(
+    () => new THREE.Vector3(
+      -bulletMesh.center.x * BULLET_SCALE,
+      -bulletMesh.center.y * BULLET_SCALE,
+      -bulletMesh.center.z * BULLET_SCALE
+    ),
+    [bulletMesh.center]
+  );
+  const splashPosRef = useRef(new THREE.Vector3());
 
   useEffect(() => {
-    if (!isFiring || !muzzleFlashRef?.current) return;
+    if (!isFiring || !muzzleFlashRef?.current || !bulletMesh.geometry) return;
 
     flashRef.current?.scale.setScalar(1.2 + Math.random() * 0.5);
     flashTimeRef.current = 0.06;
 
-    casingsRef.current.push({
-      pos: new THREE.Vector3(0.15, 0.2, 0.08),
+    const muzzle = muzzleFlashRef.current;
+    bulletsRef.current.push({
+      pos: getSplashPosition(muzzle, spawnYOffset, new THREE.Vector3()),
       vel: new THREE.Vector3(
-        1.5 + Math.random() * 1.5,
-        2.0 + Math.random() * 1.5,
-        1.0 + Math.random() * 1.5
+        (-14 - Math.random() * 4) * BULLET_SPEED,
+        (Math.random() - 0.5) * 0.4 * BULLET_SPEED,
+        (Math.random() - 0.5) * 0.4 * BULLET_SPEED
       ),
-      rot: new THREE.Vector3(Math.random() * Math.PI, Math.random() * Math.PI, 0),
-      rotVel: new THREE.Vector3(Math.random() * 15, Math.random() * 15, Math.random() * 15),
       life: 1.0,
-      decay: 1.0
+      decay: 1.4
     });
 
-    if (casingsRef.current.length > 4) {
-      casingsRef.current.shift();
+    if (bulletsRef.current.length > 4) {
+      bulletsRef.current.shift();
     }
-  }, [isFiring, muzzleFlashRef]);
+  }, [isFiring, muzzleFlashRef, bulletMesh.geometry, spawnYOffset]);
 
   useFrame((_, delta) => {
     if (muzzleFlashRef.current && flashGroupRef.current) {
-      flashGroupRef.current.position.set(...muzzleFlashRef.current);
+      flashGroupRef.current.position.copy(
+        getSplashPosition(muzzleFlashRef.current, spawnYOffset, splashPosRef.current)
+      );
     }
 
     if (flashTimeRef.current > 0) {
@@ -78,24 +120,37 @@ function FireParticles({ isFiring, muzzleFlashRef }) {
       }
     }
 
-    casingsRef.current = casingsRef.current.filter((c) => {
-      c.life -= delta * c.decay;
-      if (c.life <= 0) return false;
+    bulletsRef.current = bulletsRef.current.filter((bullet) => {
+      bullet.life -= delta * bullet.decay;
+      if (bullet.life <= 0) return false;
 
-      c.pos.addScaledVector(c.vel, delta);
-      c.vel.y -= delta * 9.81;
-      c.rot.addScaledVector(c.rotVel, delta);
+      bullet.pos.addScaledVector(bullet.vel, delta);
+      bullet.vel.multiplyScalar(0.985);
+      return bullet.pos.x > -8;
+    });
 
-      if (c.pos.y < -0.7) {
-        c.pos.y = -0.7;
-        c.vel.y = -c.vel.y * 0.4;
-        c.vel.x *= 0.6;
-        c.vel.z *= 0.6;
-        c.rotVel.multiplyScalar(0.3);
-      }
-      return true;
+    const pool = bulletPoolRef.current;
+    if (!pool || !bulletMesh.geometry) return;
+
+    while (pool.children.length > bulletsRef.current.length) {
+      pool.remove(pool.children[pool.children.length - 1]);
+    }
+
+    while (pool.children.length < bulletsRef.current.length) {
+      const mesh = new THREE.Mesh(bulletMesh.geometry, bulletMesh.material);
+      mesh.rotation.set(0, Math.PI / 2, 0);
+      mesh.scale.setScalar(BULLET_SCALE);
+      pool.add(mesh);
+    }
+
+    bulletsRef.current.forEach((bullet, index) => {
+      const mesh = pool.children[index];
+      mesh.position.copy(bullet.pos).add(offset);
+      mesh.visible = true;
     });
   });
+
+  if (!bulletMesh.geometry || !bulletMesh.material) return null;
 
   return (
     <group>
@@ -106,16 +161,16 @@ function FireParticles({ isFiring, muzzleFlashRef }) {
         </mesh>
       </group>
 
-      {casingsRef.current.map((c, idx) => (
-        <mesh
-          key={`c-${idx}`}
-          geometry={CASING_GEOMETRY}
-          material={CASING_MATERIAL}
-          position={c.pos.toArray()}
-          rotation={c.rot.toArray()}
-        />
-      ))}
+      <group ref={bulletPoolRef} />
     </group>
+  );
+}
+
+function FireParticles(props) {
+  return (
+    <Suspense fallback={null}>
+      <FireParticlesInner {...props} />
+    </Suspense>
   );
 }
 
@@ -144,10 +199,12 @@ export default function GunCanvas({ config, isFiring }) {
           muzzleFlashRef={muzzleFlashRef}
         />
 
-        <FireParticles isFiring={isFiring} muzzleFlashRef={muzzleFlashRef} />
+        <FireParticles gunId={config.gunId} isFiring={isFiring} muzzleFlashRef={muzzleFlashRef} />
       </group>
 
       <SceneControls gunId={config.gunId} inspectMode={config.inspectMode} />
     </Canvas>
   );
 }
+
+useGLTF.preload('/Bullet.glb');
