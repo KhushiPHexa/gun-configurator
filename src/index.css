@@ -490,11 +490,18 @@ body, html, #root {
 }
 
 /* Weapon KPI Panel */
-.weapon-kpi-panel {
+.weapon-kpi-wrapper {
   position: absolute;
   top: 24px;
   left: 24px;
   z-index: 10;
+}
+
+.kpi-toggle-btn {
+  display: none;
+}
+
+.weapon-kpi-panel {
   pointer-events: none;
   display: flex;
   flex-direction: column;
@@ -738,5 +745,38 @@ body, html, #root {
   }
   .canvas-container {
     height: 50%;
+  }
+
+  .kpi-toggle-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background: rgba(10, 11, 16, 0.65);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: var(--text-secondary);
+    cursor: pointer;
+    transition: var(--transition-smooth);
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.35);
+  }
+
+  .kpi-toggle-btn:hover,
+  .kpi-toggle-btn.is-active {
+    border-color: var(--accent-cyan);
+    color: var(--accent-cyan);
+  }
+
+  .weapon-kpi-panel {
+    display: none;
+    margin-top: 10px;
+    pointer-events: auto;
+  }
+
+  .weapon-kpi-panel.is-open {
+    display: flex;
   }
 }
