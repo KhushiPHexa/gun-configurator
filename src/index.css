@@ -740,15 +740,33 @@ body, html, #root {
 @media(max-width: 900px) {
   .app-container {
     flex-direction: column;
+    height: 100dvh;
+    min-height: 0;
   }
   .sidebar {
     width: 100%;
-    height: 50%;
+    flex: 0 0 50%;
+    max-height: 50dvh;
+    min-height: 0;
+    height: auto;
     border-left: none;
     border-top: 1px solid var(--glass-border);
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior-y: contain;
+    touch-action: pan-y;
+    padding-bottom: calc(24px + env(safe-area-inset-bottom, 0px));
   }
   .canvas-container {
-    height: 50%;
+    flex: 0 0 50%;
+    max-height: 50dvh;
+    min-height: 0;
+    height: auto;
+  }
+
+  .actions-footer {
+    margin-top: 16px;
+    flex-shrink: 0;
   }
 
   .kpi-toggle-btn {
