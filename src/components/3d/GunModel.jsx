@@ -1,68 +1,128 @@
-import React, { useRef, useEffect, useMemo } from 'react';
+import React, { useRef, useEffect, useMemo, Suspense } from 'react';
 import { useGLTF, ContactShadows } from '@react-three/drei';
 import { useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
+import { getGunById } from '../../constants/guns';
 
-export default function GunModel({ isFiring, muzzleFlashRef }) {
-  const { scene } = useGLTF('/gun.glb');
+const _muzzleWorld = new THREE.Vector3();
+const _muzzleParent = new THREE.Vector3();
+const layoutCache = new Map();
+
+function resetSceneTransform(scene) {
+  scene.position.set(0, 0, 0);
+  scene.rotation.set(0, 0, 0);
+  scene.scale.set(1, 1, 1);
+  scene.updateMatrixWorld(true);
+}
+
+function buildModelLayout(scene, modelPath) {
+  if (layoutCache.has(modelPath)) {
+    return layoutCache.get(modelPath);
+  }
+
+  resetSceneTransform(scene);
+
+  const box = new THREE.Box3().setFromObject(scene);
+  const size = new THREE.Vector3();
+  const center = new THREE.Vector3();
+  box.getSize(size);
+  box.getCenter(center);
+
+  const longestDim = Math.max(size.x, size.y, size.z);
+  const scale = 3.2 / longestDim;
+
+  const matrix = new THREE.Matrix4().compose(
+    new THREE.Vector3(-center.z * scale, -center.y * scale, center.x * scale),
+    new THREE.Quaternion().setFromEuler(new THREE.Euler(0, Math.PI / 2, 0)),
+    new THREE.Vector3(scale, scale, scale)
+  );
+
+  const transformedBox = box.clone().applyMatrix4(matrix);
+  const transformedSize = new THREE.Vector3();
+  const transformedCenter = new THREE.Vector3();
+  transformedBox.getSize(transformedSize);
+  transformedBox.getCenter(transformedCenter);
+
+  const footprint = Math.max(transformedSize.x, transformedSize.z);
+
+  const layout = {
+    scale,
+    position: [-center.z * scale, -center.y * scale, center.x * scale],
+    shadow: {
+      position: [transformedCenter.x, transformedBox.min.y - 0.004, transformedCenter.z],
+      width: footprint * 2.6,
+      depth: footprint * 2.6
+    },
+    muzzleLocal: new THREE.Vector3(
+      transformedBox.min.x - 0.08,
+      transformedCenter.y,
+      transformedCenter.z
+    )
+  };
+
+  layoutCache.set(modelPath, layout);
+  return layout;
+}
+
+function GunModelInner({ gunId, isFiring, muzzleFlashRef }) {
+  const gun = getGunById(gunId);
+  const { scene } = useGLTF(gun.modelPath);
   const gunGroupRef = useRef();
   const recoilRef = useRef(0);
+  const muzzleLocalRef = useRef(new THREE.Vector3());
+  const prevPathRef = useRef(gun.modelPath);
 
-  const modelStats = useMemo(() => {
-    const box = new THREE.Box3().setFromObject(scene);
-    const size = new THREE.Vector3();
-    box.getSize(size);
-    const center = new THREE.Vector3();
-    box.getCenter(center);
-    
-    const longestDim = Math.max(size.x, size.y, size.z);
-    const scale = 3.2 / longestDim;
-    
-    return {
-      size: new THREE.Vector3(size.z * scale, size.y * scale, size.x * scale),
-      center: new THREE.Vector3(center.z * scale, center.y * scale, center.x * scale),
-      scale,
-      isAlongX: true,
-      originalCenter: center.clone()
-    };
-  }, [scene]);
+  const layout = useMemo(
+    () => buildModelLayout(scene, gun.modelPath),
+    [scene, gun.modelPath]
+  );
+  muzzleLocalRef.current.copy(layout.muzzleLocal);
 
   useEffect(() => {
+    resetSceneTransform(scene);
+
     scene.traverse((child) => {
-      if (child.isMesh) {
-        child.castShadow = true;
-        child.receiveShadow = true;
-        
-        if (!child.userData.originalMap) {
-          child.userData.originalMap = child.material.map;
-          child.userData.originalColor = child.material.color ? child.material.color.clone() : new THREE.Color('#ffffff');
-          child.userData.originalRoughness = child.material.roughness !== undefined ? child.material.roughness : 0.5;
-          child.userData.originalMetalness = child.material.metalness !== undefined ? child.material.metalness : 0.5;
-        }
+      if (!child.isMesh || !child.material) return;
+      child.frustumCulled = true;
 
-        const mat = child.material.clone();
-        mat.map = child.userData.originalMap;
-        mat.emissive = new THREE.Color('#000000');
-        mat.clearcoat = 0;
-        mat.color = new THREE.Color('#ffffff');
-        mat.roughness = 0.6;
-        mat.metalness = 0.5;
-
-        child.material = mat;
-      }
+      const mat = child.material;
+      if (mat.color) mat.color.set('#ffffff');
+      mat.roughness = 0.6;
+      mat.metalness = 0.5;
+      if (mat.emissive) mat.emissive.set('#000000');
     });
+
+    return () => resetSceneTransform(scene);
   }, [scene]);
 
   useEffect(() => {
-    if (isFiring) {
-      recoilRef.current = 1.0;
+    const previousPath = prevPathRef.current;
+    prevPathRef.current = gun.modelPath;
+
+    if (previousPath && previousPath !== gun.modelPath) {
+      useGLTF.clear(previousPath);
     }
+
+    recoilRef.current = 0;
+    gunGroupRef.current?.position.set(0, 0, 0);
+    gunGroupRef.current?.rotation.set(0, 0, 0);
+  }, [gun.modelPath]);
+
+  useEffect(() => {
+    if (isFiring) recoilRef.current = 1.0;
   }, [isFiring]);
 
-  useFrame((state, delta) => {
+  useFrame((_, delta) => {
+    if (gunGroupRef.current && muzzleFlashRef) {
+      _muzzleWorld.copy(muzzleLocalRef.current);
+      gunGroupRef.current.localToWorld(_muzzleWorld);
+      _muzzleParent.copy(_muzzleWorld);
+      gunGroupRef.current.parent?.worldToLocal(_muzzleParent);
+      muzzleFlashRef.current = _muzzleParent.toArray();
+    }
+
     if (recoilRef.current > 0) {
-      recoilRef.current -= delta * 12;
-      if (recoilRef.current < 0) recoilRef.current = 0;
+      recoilRef.current = Math.max(0, recoilRef.current - delta * 12);
     }
 
     if (gunGroupRef.current) {
@@ -72,72 +132,37 @@ export default function GunModel({ isFiring, muzzleFlashRef }) {
     }
   });
 
-  const shadowPlane = useMemo(() => {
-    const box = new THREE.Box3().setFromObject(scene);
-    const s = modelStats.scale;
-
-    const matrix = new THREE.Matrix4().compose(
-      new THREE.Vector3(
-        -modelStats.originalCenter.z * s,
-        -modelStats.originalCenter.y * s,
-        modelStats.originalCenter.x * s
-      ),
-      new THREE.Quaternion().setFromEuler(new THREE.Euler(0, Math.PI / 2, 0)),
-      new THREE.Vector3(s, s, s)
-    );
-
-    const transformedBox = box.clone().applyMatrix4(matrix);
-    const size = new THREE.Vector3();
-    const center = new THREE.Vector3();
-    transformedBox.getSize(size);
-    transformedBox.getCenter(center);
-
-    return {
-      position: [center.x, transformedBox.min.y - 0.002, center.z],
-      scale: Math.max(size.x, size.z) * 2.6
-    };
-  }, [scene, modelStats]);
-
-  const attachPositions = useMemo(() => {
-    const s = modelStats.size;
-    const c = new THREE.Vector3(0, 0, 0);
-
-    return {
-      muzzle: [c.x - s.x * 0.5 - 0.1, c.y + s.y * 0.1, c.z]
-    };
-  }, [modelStats]);
-
-  useEffect(() => {
-    if (muzzleFlashRef && attachPositions) {
-      muzzleFlashRef.current = attachPositions.muzzle;
-    }
-  }, [attachPositions, muzzleFlashRef]);
-
   return (
     <group ref={gunGroupRef}>
-      <primitive
-        object={scene}
-        scale={[modelStats.scale, modelStats.scale, modelStats.scale]}
+      <group
+        scale={[layout.scale, layout.scale, layout.scale]}
         rotation={[0, Math.PI / 2, 0]}
-        position={[
-          -modelStats.originalCenter.z * modelStats.scale,
-          -modelStats.originalCenter.y * modelStats.scale,
-          modelStats.originalCenter.x * modelStats.scale
-        ]}
-      />
+        position={layout.position}
+      >
+        <primitive object={scene} />
+      </group>
 
       <ContactShadows
-        position={shadowPlane.position}
-        opacity={0.55}
-        scale={shadowPlane.scale}
-        blur={1.8}
-        far={3.5}
-        resolution={1024}
-        frames={Infinity}
+        key={gun.modelPath}
+        position={layout.shadow.position}
+        opacity={0.52}
+        scale={layout.shadow.width}
+        blur={2.5}
+        far={3}
+        resolution={512}
+        frames={1}
         color="#000000"
       />
     </group>
   );
 }
 
-useGLTF.preload('/gun.glb');
+export default function GunModel(props) {
+  return (
+    <Suspense fallback={null}>
+      <GunModelInner {...props} />
+    </Suspense>
+  );
+}
+
+useGLTF.preload('/rock-island-pistol.glb');

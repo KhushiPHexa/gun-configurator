@@ -4,9 +4,11 @@ import {
   RotateCcw, 
   Volume2, 
   Eye, 
-  MapPin
+  Crosshair
 } from 'lucide-react';
 import { playToggleSound } from '../../utils/AudioEngine';
+import { GUNS } from '../../constants/guns';
+import { useGLTF } from '@react-three/drei';
 
 export default function ConfiguratorPanel({ 
   config, 
@@ -15,8 +17,39 @@ export default function ConfiguratorPanel({
   onReload, 
   onReset 
 }) {
+  const handleGunChange = (gunId) => {
+    if (config.gunId === gunId) return;
+    playToggleSound();
+    setConfig((prev) => ({ ...prev, gunId }));
+  };
+
   return (
     <aside className="sidebar">
+      <section className="config-section gun-selector-section">
+        <div className="section-title">
+          <Crosshair size={14} />
+          <span>Select Weapon</span>
+        </div>
+        <div className="gun-selector-list">
+          {GUNS.map((gun) => (
+            <button
+              key={gun.id}
+              type="button"
+              className={`gun-option-card ${config.gunId === gun.id ? 'active' : ''}`}
+              onMouseEnter={() => useGLTF.preload(gun.modelPath)}
+              onClick={() => handleGunChange(gun.id)}
+            >
+              <img
+                src={gun.icon}
+                alt={gun.name}
+                className="gun-option-thumb"
+              />
+              <span className="gun-option-name">{gun.name}</span>
+            </button>
+          ))}
+        </div>
+      </section>
+
       <footer className="actions-footer">
         <button className="fire-btn" onClick={onFire}>
           <Flame size={18} fill="white" />
@@ -41,24 +74,10 @@ export default function ConfiguratorPanel({
           </button>
         </div>
 
-        <div className="utility-buttons" style={{ gridTemplateColumns: '2fr 1fr' }}>
-          <button 
-            className={`util-btn ${config.showHotspots ? 'active' : ''}`}
-            style={{ width: '100%' }}
-            onClick={() => {
-              playToggleSound();
-              setConfig(prev => ({ ...prev, showHotspots: !prev.showHotspots }));
-            }}
-          >
-            <MapPin size={15} />
-            <span>{config.showHotspots ? 'HIDE ANNOTATIONS' : 'SHOW ANNOTATIONS'}</span>
-          </button>
-          
-          <button className="util-btn" style={{ padding: '8px' }} title="Reset Weapon" onClick={onReset}>
-            <Eye size={15} />
-            <span>RESET</span>
-          </button>
-        </div>
+        <button className="util-btn" style={{ width: '100%' }} title="Reset Weapon" onClick={onReset}>
+          <Eye size={15} />
+          <span>RESET</span>
+        </button>
       </footer>
     </aside>
   );
