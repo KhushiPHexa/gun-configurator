@@ -1,4 +1,4 @@
-import React, { useRef, useEffect, useMemo, Suspense } from 'react';
+import { useRef, useEffect, useMemo, Suspense } from 'react';
 import { useGLTF, ContactShadows } from '@react-three/drei';
 import { useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
@@ -75,7 +75,10 @@ function GunModelInner({ gunId, isFiring, muzzleFlashRef }) {
     () => buildModelLayout(scene, gun.modelPath),
     [scene, gun.modelPath]
   );
-  muzzleLocalRef.current.copy(layout.muzzleLocal);
+
+  useEffect(() => {
+    muzzleLocalRef.current.copy(layout.muzzleLocal);
+  }, [layout, muzzleLocalRef]);
 
   useEffect(() => {
     resetSceneTransform(scene);

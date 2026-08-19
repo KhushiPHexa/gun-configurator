@@ -195,6 +195,5 @@ export const getNeonGlitchTexture = () => {
     ctx.fillStyle = 'rgba(0, 242, 254, 0.25)';
     ctx.font = '10px monospace';
     ctx.fillText('SYS.STATUS: ACTIVE', 20, 40);
-    ctx.fillText('WEAPON_DEV_v2.09', 20, 55);
   }, 256, 256, 2, 2);
 };
