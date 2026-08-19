@@ -1,16 +1,34 @@
 import React, { useRef, useEffect, useMemo, Suspense } from 'react';
-import { Canvas, useFrame } from '@react-three/fiber';
+import { Canvas, useFrame, useThree } from '@react-three/fiber';
 import { OrbitControls, useGLTF } from '@react-three/drei';
 import * as THREE from 'three';
 import GunModel from './GunModel';
-import { getGunById } from '../../constants/guns';
+import { DEFAULT_GUN_ID, getGunById } from '../../constants/guns';
+
+const BASE_CAMERA_Y = 0.1;
+const BASE_CAMERA_Z = 3.2;
+const BASE_MIN_DISTANCE = 1.4;
+const BASE_MAX_DISTANCE = 5.5;
+
+function getCameraDistanceScale(gunId) {
+  return getGunById(gunId).cameraDistanceScale ?? 1;
+}
 
 function SceneControls({ gunId, autoRotate }) {
   const controlsRef = useRef();
+  const { camera } = useThree();
+  const distanceScale = getCameraDistanceScale(gunId);
 
   useEffect(() => {
-    controlsRef.current?.reset();
-  }, [gunId]);
+    const distance = BASE_CAMERA_Z * distanceScale;
+    camera.position.set(0, BASE_CAMERA_Y, distance);
+    camera.updateProjectionMatrix();
+
+    if (controlsRef.current) {
+      controlsRef.current.target.set(0, 0, 0);
+      controlsRef.current.update();
+    }
+  }, [gunId, distanceScale, camera]);
 
   return (
     <OrbitControls
@@ -19,8 +37,8 @@ function SceneControls({ gunId, autoRotate }) {
       dampingFactor={0.05}
       autoRotate={autoRotate}
       autoRotateSpeed={0.8}
-      minDistance={1.4}
-      maxDistance={5.5}
+      minDistance={BASE_MIN_DISTANCE * distanceScale}
+      maxDistance={BASE_MAX_DISTANCE * distanceScale}
       minPolarAngle={0.1}
       maxPolarAngle={Math.PI / 2 + 0.05}
       target={[0, 0, 0]}
@@ -176,10 +194,11 @@ function FireParticles(props) {
 
 export default function GunCanvas({ config, isFiring }) {
   const muzzleFlashRef = useRef([0, 0, 0]);
+  const initialDistanceScale = getCameraDistanceScale(config.gunId ?? DEFAULT_GUN_ID);
 
   return (
     <Canvas
-      camera={{ position: [0, 0.1, 3.2], fov: 60 }}
+      camera={{ position: [0, BASE_CAMERA_Y, BASE_CAMERA_Z * initialDistanceScale], fov: 60 }}
       gl={{
         antialias: true,
         powerPreference: 'high-performance',
