@@ -1,7 +1,9 @@
 import React, { useState } from 'react';
 import GunCanvas from './components/3d/GunCanvas';
 import ConfiguratorPanel from './components/ui/ConfiguratorPanel';
+import LoadingScreen from './components/ui/LoadingScreen';
 import { playShotSound, playReloadSound, playToggleSound } from './utils/AudioEngine';
+import { useAssetPreload } from './hooks/useAssetPreload';
 import { Volume2, VolumeX } from 'lucide-react';
 import WeaponKPIs from './components/ui/WeaponKPIs';
 import { DEFAULT_GUN_ID } from './constants/guns';
@@ -12,9 +14,14 @@ const INITIAL_CONFIG = {
 };
 
 export default function App() {
+  const { isReady, progress } = useAssetPreload();
   const [config, setConfig] = useState(INITIAL_CONFIG);
   const [isFiring, setIsFiring] = useState(false);
   const [audioMuted, setAudioMuted] = useState(false);
+
+  if (!isReady) {
+    return <LoadingScreen progress={progress} />;
+  }
 
   const handleFire = () => {
     if (isFiring) return;

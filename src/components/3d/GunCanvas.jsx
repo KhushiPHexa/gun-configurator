@@ -206,5 +206,3 @@ export default function GunCanvas({ config, isFiring }) {
     </Canvas>
   );
 }
-
-useGLTF.preload('/Bullet.glb');

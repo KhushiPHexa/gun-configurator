@@ -70,7 +70,6 @@ function GunModelInner({ gunId, isFiring, muzzleFlashRef }) {
   const gunGroupRef = useRef();
   const recoilRef = useRef(0);
   const muzzleLocalRef = useRef(new THREE.Vector3());
-  const prevPathRef = useRef(gun.modelPath);
 
   const layout = useMemo(
     () => buildModelLayout(scene, gun.modelPath),
@@ -96,13 +95,6 @@ function GunModelInner({ gunId, isFiring, muzzleFlashRef }) {
   }, [scene]);
 
   useEffect(() => {
-    const previousPath = prevPathRef.current;
-    prevPathRef.current = gun.modelPath;
-
-    if (previousPath && previousPath !== gun.modelPath) {
-      useGLTF.clear(previousPath);
-    }
-
     recoilRef.current = 0;
     gunGroupRef.current?.position.set(0, 0, 0);
     gunGroupRef.current?.rotation.set(0, 0, 0);
@@ -164,5 +156,3 @@ export default function GunModel(props) {
     </Suspense>
   );
 }
-
-useGLTF.preload('/rock-island-pistol.glb');
