@@ -5,7 +5,8 @@ export const GUNS = [
     icon: '/icons/rock_island_pistol.webp',
     modelPath: '/rock-island-pistol.glb',
     bulletSpawnYOffset: 0.75,
-    cameraDistanceScale: 1.3
+    cameraDistanceScale: 1.3,
+    muzzleFlashOffset: [0, 0, 0]
   },
   {
     id: 'antique-revolver',
@@ -13,14 +14,16 @@ export const GUNS = [
     icon: '/icons/antique_revolver.webp',
     modelPath: '/antique-revolver.glb',
     bulletSpawnYOffset: 0.55,
-    cameraDistanceScale: 1.3
+    cameraDistanceScale: 1.3,
+    muzzleFlashOffset: [0, 0, 0]
   },
   {
     id: 'm416-gun',
     name: 'M416 Rifle',
     icon: '/icons/m416_gun.webp',
     modelPath: '/m416-gun.glb',
-    bulletSpawnYOffset: 0.15
+    bulletSpawnYOffset: 0.15,
+    muzzleFlashOffset: [0, 0, 0]
   }
 ];
 

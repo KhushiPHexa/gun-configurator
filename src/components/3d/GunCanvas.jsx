@@ -1,9 +1,10 @@
-import React, { useRef, useEffect, useMemo, Suspense } from 'react';
+import { useRef, useEffect, useMemo, Suspense, useState } from 'react';
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
 import { Environment, OrbitControls, useGLTF } from '@react-three/drei';
 import * as THREE from 'three';
 import GunModel from './GunModel';
 import { DEFAULT_GUN_ID, getGunById } from '../../constants/guns';
+import { MuzzleFlash } from './MuzzleFlash';
 
 const BASE_CAMERA_Y = 0.1;
 const BASE_CAMERA_Z = 3.2;
@@ -80,7 +81,7 @@ function getSplashPosition(muzzle, yOffset, target = new THREE.Vector3()) {
   return target.set(muzzle[0], muzzle[1] + yOffset, muzzle[2]);
 }
 
-function FireParticlesInner({ gunId, isFiring, muzzleFlashRef }) {
+function FireParticlesInner({ gunId, isFiring, muzzleFlashRef, muzzleFlashOffset }) {
   const gun = getGunById(gunId);
   const spawnYOffset = gun.bulletSpawnYOffset;
   const bulletsRef = useRef([]);
@@ -89,6 +90,8 @@ function FireParticlesInner({ gunId, isFiring, muzzleFlashRef }) {
   const flashGroupRef = useRef(null);
   const flashTimeRef = useRef(0);
   const bulletMesh = useBulletMesh();
+  const [flashTrigger, setFlashTrigger] = useState(0);
+  const [currentMuzzleFlashPosition, setCurrentMuzzleFlashPosition] = useState([0, 0, 0]);
   const offset = useMemo(
     () => new THREE.Vector3(
       -bulletMesh.center.x * BULLET_SCALE,
@@ -102,10 +105,11 @@ function FireParticlesInner({ gunId, isFiring, muzzleFlashRef }) {
   useEffect(() => {
     if (!isFiring || !muzzleFlashRef?.current || !bulletMesh.geometry) return;
 
-    flashRef.current?.scale.setScalar(1.2 + Math.random() * 0.5);
+    setFlashTrigger((prev) => prev + 1);
     flashTimeRef.current = 0.06;
 
     const muzzle = muzzleFlashRef.current;
+    setCurrentMuzzleFlashPosition(getSplashPosition(muzzle, spawnYOffset, new THREE.Vector3()).toArray());
     bulletsRef.current.push({
       pos: getSplashPosition(muzzle, spawnYOffset, new THREE.Vector3()),
       vel: new THREE.Vector3(
@@ -127,14 +131,19 @@ function FireParticlesInner({ gunId, isFiring, muzzleFlashRef }) {
       flashGroupRef.current.position.copy(
         getSplashPosition(muzzleFlashRef.current, spawnYOffset, splashPosRef.current)
       );
+      setCurrentMuzzleFlashPosition(getSplashPosition(muzzleFlashRef.current, spawnYOffset, splashPosRef.current).toArray());
     }
 
     if (flashTimeRef.current > 0) {
       flashTimeRef.current -= delta;
       if (flashTimeRef.current <= 0) {
-        flashRef.current?.scale.setScalar(0);
+        flashRef.current?.children.forEach(mesh => {
+          mesh.scale.setScalar(0);
+        });
       } else {
-        flashRef.current?.scale.multiplyScalar(0.75);
+        flashRef.current?.children.forEach(mesh => {
+          mesh.scale.multiplyScalar(0.75);
+        });
       }
     }
 
@@ -173,10 +182,14 @@ function FireParticlesInner({ gunId, isFiring, muzzleFlashRef }) {
   return (
     <group>
       <group ref={flashGroupRef}>
-        <mesh ref={flashRef} scale={[0, 0, 0]}>
-          <sphereGeometry args={[0.22, 12, 12]} />
-          <meshBasicMaterial color="#ffbb44" transparent opacity={0.9} />
-        </mesh>
+        <MuzzleFlash
+          ref={flashRef}
+          trigger={flashTrigger}
+          position={currentMuzzleFlashPosition}
+          muzzleFlashOffset={muzzleFlashOffset}
+          scale={[0.7, 0.25, 1]} // Adjust scale as needed
+          duration={0.12}
+        />
       </group>
 
       <group ref={bulletPoolRef} />
@@ -218,10 +231,11 @@ export default function GunCanvas({ config, isFiring }) {
           muzzleFlashRef={muzzleFlashRef}
         />
 
-        <FireParticles gunId={config.gunId} isFiring={isFiring} muzzleFlashRef={muzzleFlashRef} />
+        <FireParticles gunId={config.gunId} isFiring={isFiring} muzzleFlashRef={muzzleFlashRef} muzzleFlashOffset={config.muzzleFlashOffset} />
       </group>
 
       <SceneControls gunId={config.gunId} autoRotate={config.autoRotate} />
     </Canvas>
   );
 }
+
