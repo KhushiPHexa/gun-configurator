@@ -2,7 +2,8 @@ import React, { useState, Suspense } from 'react';
 import GunCanvas from './components/3d/GunCanvas';
 import ConfiguratorPanel from './components/ui/ConfiguratorPanel';
 import { playShotSound, playReloadSound, playToggleSound } from './utils/AudioEngine';
-import { Volume2, VolumeX, ShieldCheck } from 'lucide-react';
+import { Volume2, VolumeX } from 'lucide-react';
+import WeaponKPIs from './components/ui/WeaponKPIs';
 
 const INITIAL_CONFIG = {
   inspectMode: false,
@@ -58,11 +59,7 @@ export default function App() {
     <div className="app-container" onClick={() => setActiveHotspot(null)}>
       {/* 3D Canvas Viewport */}
       <main className="canvas-container">
-        {/* Top-left Indicator */}
-        <div className="overlay-badge">
-          <div className="dot-pulse-green" />
-          <span style={{ fontWeight: 600 }}>ARMORY PIPELINE SECURE</span>
-        </div>
+        <WeaponKPIs />
 
         {/* 3D Renders */}
         <Suspense fallback={
@@ -125,22 +122,6 @@ export default function App() {
               <span>SYNTH AUDIO: ACTIVE</span>
             </>
           )}
-        </div>
-
-        {/* Interaction hint */}
-        <div style={{
-          position: 'absolute',
-          bottom: '24px',
-          right: '24px',
-          pointerEvents: 'none',
-          fontSize: '11px',
-          color: 'var(--text-muted)',
-          display: 'flex',
-          alignItems: 'center',
-          gap: '6px'
-        }}>
-          <ShieldCheck size={14} />
-          <span>DRAG TO ROTATE • PINCH TO ZOOM</span>
         </div>
       </main>
 

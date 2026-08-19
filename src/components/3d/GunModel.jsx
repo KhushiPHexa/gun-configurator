@@ -1,5 +1,5 @@
 import React, { useRef, useEffect, useMemo } from 'react';
-import { useGLTF } from '@react-three/drei';
+import { useGLTF, ContactShadows } from '@react-three/drei';
 import { useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
 
@@ -72,6 +72,32 @@ export default function GunModel({ isFiring, muzzleFlashRef }) {
     }
   });
 
+  const shadowPlane = useMemo(() => {
+    const box = new THREE.Box3().setFromObject(scene);
+    const s = modelStats.scale;
+
+    const matrix = new THREE.Matrix4().compose(
+      new THREE.Vector3(
+        -modelStats.originalCenter.z * s,
+        -modelStats.originalCenter.y * s,
+        modelStats.originalCenter.x * s
+      ),
+      new THREE.Quaternion().setFromEuler(new THREE.Euler(0, Math.PI / 2, 0)),
+      new THREE.Vector3(s, s, s)
+    );
+
+    const transformedBox = box.clone().applyMatrix4(matrix);
+    const size = new THREE.Vector3();
+    const center = new THREE.Vector3();
+    transformedBox.getSize(size);
+    transformedBox.getCenter(center);
+
+    return {
+      position: [center.x, transformedBox.min.y - 0.002, center.z],
+      scale: Math.max(size.x, size.z) * 2.6
+    };
+  }, [scene, modelStats]);
+
   const attachPositions = useMemo(() => {
     const s = modelStats.size;
     const c = new THREE.Vector3(0, 0, 0);
@@ -98,6 +124,17 @@ export default function GunModel({ isFiring, muzzleFlashRef }) {
           -modelStats.originalCenter.y * modelStats.scale,
           modelStats.originalCenter.x * modelStats.scale
         ]}
+      />
+
+      <ContactShadows
+        position={shadowPlane.position}
+        opacity={0.55}
+        scale={shadowPlane.scale}
+        blur={1.8}
+        far={3.5}
+        resolution={1024}
+        frames={Infinity}
+        color="#000000"
       />
     </group>
   );

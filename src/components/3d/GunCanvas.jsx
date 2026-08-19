@@ -1,6 +1,6 @@
 import React, { useRef, useState, useEffect } from 'react';
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
-import { OrbitControls, Html, ContactShadows } from '@react-three/drei';
+import { OrbitControls, Html } from '@react-three/drei';
 import * as THREE from 'three';
 import GunModel from './GunModel';
 
@@ -184,17 +184,29 @@ export default function GunCanvas({ config, isFiring, activeHotspot, setActiveHo
     <>
       <color attach="background" args={['#cecece']} />
       <ambientLight intensity={0.45} />
-      <directionalLight position={[5, 10, 3]} intensity={2.5} castShadow shadow-mapSize-width={2048} shadow-mapSize-height={2048} />
+      <directionalLight
+        position={[5, 10, 3]}
+        intensity={2.5}
+        castShadow
+        shadow-mapSize-width={2048}
+        shadow-mapSize-height={2048}
+        shadow-camera-near={0.5}
+        shadow-camera-far={20}
+        shadow-camera-left={-3}
+        shadow-camera-right={3}
+        shadow-camera-top={3}
+        shadow-camera-bottom={-3}
+        shadow-bias={-0.0002}
+        shadow-radius={2}
+      />
       <directionalLight position={[-5, 5, -8]} intensity={1.5} color="#fff" />
       <pointLight position={[0, 4, 6]} color="#ffffff" intensity={0.5} />
-      
-      <ContactShadows position={[0, -0.85, 0]} opacity={0.65} scale={8} blur={2.2} far={2} />
     </>
   );
 
   return (
     <Canvas
-      shadows
+      shadows="soft"
       camera={{ position: [0, 0.1, 3.2], fov: 60 }}
       gl={{ antialias: true, preserveDrawingBuffer: true, toneMappingExposure :3  }}
     >
